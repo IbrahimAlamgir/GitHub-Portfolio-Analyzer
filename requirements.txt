@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────
+# GitHub Portfolio Analyzer – Python Dependencies
+# ─────────────────────────────────────────────
+
+# Web framework
+fastapi==0.111.0
+
+# ASGI server
+uvicorn[standard]==0.29.0
+
+# HTTP client for GitHub API calls
+requests==2.32.2
+
+# Jinja2 templating engine (used by FastAPI to serve HTML templates)
+jinja2==3.1.4
+
+# Static-file serving support (already bundled with FastAPI, pinned for clarity)
+python-multipart==0.0.9
+
+# Optional – nicer tracebacks during development
+rich==13.7.1

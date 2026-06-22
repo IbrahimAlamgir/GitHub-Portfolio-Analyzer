@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Portfolio Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container nav-container">
+            <h1 class="logo">🚀 Git<span>Metrics</span></h1>
+            <div id="health-badge" class="badge checking">Connecting API...</div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Search Section -->
+        <section class="search-section">
+            <h2>Analyze Your Dev Presence</h2>
+            <p>Enter a GitHub username to calculate a portfolio score, view metrics, and review actionable feedback.</p>
+            <form id="search-form" class="search-box">
+                <input type="text" id="username-input" placeholder="e.g., torvalds" required autocomplete="off">
+                <button type="submit" id="search-btn">Analyze</button>
+            </form>
+            <div id="error-container" class="error-box hidden"></div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-box hidden">
+            <div class="spinner"></div>
+            <p>Fetching profile, parsing repos, and crunching score metrics...</p>
+        </div>
+
+        <!-- Dashboard Output Section -->
+        <section id="dashboard" class="dashboard-grid hidden">
+            
+            <!-- Main Score Card -->
+            <div class="card score-card span-all">
+                <div class="score-header">
+                    <div class="user-meta">
+                        <img id="user-avatar" src="" alt="Avatar">
+                        <div>
+                            <h2 id="user-name">User Name</h2>
+                            <a id="user-profile-link" href="#" target="_blank">@username</a>
+                            <p id="user-bio">User bio description goes here.</p>
+                        </div>
+                    </div>
+                    <div class="score-badge-container">
+                        <div id="score-grade">A</div>
+                        <div class="score-subtext">
+                            <span id="score-num">85</span>/100
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="divider">
+
+                <div class="feedback-grid">
+                    <div class="feedback-col">
+                        <h3>🟢 Strengths</h3>
+                        <ul id="strengths-list" class="feedback-list strength"></ul>
+                    </div>
+                    <div class="feedback-col">
+                        <h3>🔴 Areas to Improve</h3>
+                        <ul id="weaknesses-list" class="feedback-list weakness"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Stats -->
+            <div class="card">
+                <h3>Profile Analysis</h3>
+                <table class="stats-table">
+                    <tr><td>Total Public Repos</td><td id="stat-repos" class="text-right bold">-</td></tr>
+                    <tr><td>Followers</td><td id="stat-followers" class="text-right bold">-</td></tr>
+                    <tr><td>Following</td><td id="stat-following" class="text-right bold">-</td></tr>
+                    <tr><td>Account Age</td><td id="stat-age" class="text-right bold">-</td></tr>
+                </table>
+            </div>
+
+            <!-- Repo Insights -->
+            <div class="card">
+                <h3>Repository Insights</h3>
+                <table class="stats-table">
+                    <tr><td>Total Stars Earned</td><td id="stat-stars" class="text-right bold">-</td></tr>
+                    <tr><td>Total Forks Received</td><td id="stat-forks" class="text-right bold">-</td></tr>
+                    <tr><td>Avg Stars/Repo</td><td id="stat-avg-stars" class="text-right bold">-</td></tr>
+                    <tr><td>Documented Repos</td><td id="stat-doc-ratio" class="text-right bold">-</td></tr>
+                </table>
+            </div>
+
+            <!-- Language Distribution -->
+            <div class="card">
+                <h3>Primary Languages</h3>
+                <div id="languages-container" class="bar-chart-container"></div>
+            </div>
+
+            <!-- Activity Summary -->
+            <div class="card">
+                <h3>Recent Activity</h3>
+                <table class="stats-table">
+                    <tr><td>Recent Public Events</td><td id="stat-events" class="text-right bold">-</td></tr>
+                    <tr><td>Contribution Events</td><td id="stat-contributions" class="text-right bold">-</td></tr>
+                    <tr><td>Last Active Time</td><td id="stat-last-active" class="text-right bold">-</td></tr>
+                    <tr><td>Repos Updated (30d)</td><td id="stat-updated-30d" class="text-right bold">-</td></tr>
+                </table>
+            </div>
+
+            <!-- Top Repositories Card -->
+            <div class="card span-all">
+                <h3>Top Repositories</h3>
+                <div id="top-repos-list" class="repo-grid"></div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Built with FastAPI & Vanilla JavaScript</p>
+    </footer>
+
+    <!-- Frontend Application JavaScript Single Page Router/Logic -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const searchForm = document.getElementById("search-form");
+            const usernameInput = document.getElementById("username-input");
+            const searchBtn = document.getElementById("search-btn");
+            const errorContainer = document.getElementById("error-container");
+            const loadingState = document.getElementById("loading-state");
+            const dashboard = document.getElementById("dashboard");
+            const healthBadge = document.getElementById("health-badge");
+
+            // Check health of backend API 
+            fetch("/api/health")
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "ok") {
+                        healthBadge.textContent = "API: Connected";
+                        healthBadge.className = "badge connected";
+                    }
+                })
+                .catch(() => {
+                    healthBadge.textContent = "API: Offline";
+                    healthBadge.className = "badge offline";
+                });
+
+            // Form Submit handler
+            searchForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const username = usernameInput.value.trim();
+                if (!username) return;
+
+                // Reset states
+                errorContainer.classList.add("hidden");
+                dashboard.classList.add("hidden");
+                loadingState.classList.remove("hidden");
+                searchBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/analyze/${username}`);
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.detail || "An unexpected error occurred while analyzing.");
+                    }
+
+                    renderDashboard(data);
+                    loadingState.classList.add("hidden");
+                    dashboard.classList.remove("hidden");
+                } catch (err) {
+                    loadingState.classList.add("hidden");
+                    errorContainer.textContent = err.message;
+                    errorContainer.classList.remove("hidden");
+                } finally {
+                    searchBtn.disabled = false;
+                }
+            });
+
+            function renderDashboard(data) {
+                // Profile Section
+                document.getElementById("user-avatar").src = data.profile.avatar_url;
+                document.getElementById("user-name").textContent = data.profile.name || data.profile.username;
+                document.getElementById("user-profile-link").textContent = `@${data.profile.username}`;
+                document.getElementById("user-profile-link").href = data.profile.profile_url;
+                document.getElementById("user-bio").textContent = data.profile.bio || "No biography provided.";
+
+                // Score Elements
+                document.getElementById("score-grade").textContent = data.score.grade;
+                document.getElementById("score-num").textContent = data.score.score;
+                
+                // Set grade-dependent color themes styling dynamically
+                const gradeClassMap = { 'S':'grade-s', 'A':'grade-a', 'B':'grade-b', 'C':'grade-c', 'D':'grade-d', 'F':'grade-f' };
+                document.getElementById("score-grade").className = gradeClassMap[data.score.grade] || '';
+
+                // Lists parsing
+                const strengthsList = document.getElementById("strengths-list");
+                strengthsList.innerHTML = data.score.strengths.map(s => `<li>✓ ${s}</li>`).join("");
+                
+                const weaknessesList = document.getElementById("weaknesses-list");
+                weaknessesList.innerHTML = data.score.weaknesses.map(w => `<li>✗ ${w}</li>`).join("");
+
+                // Profile Stats
+                document.getElementById("stat-repos").textContent = data.profile.public_repos;
+                document.getElementById("stat-followers").textContent = data.profile.followers.toLocaleString();
+                document.getElementById("stat-following").textContent = data.profile.following.toLocaleString();
+                document.getElementById("stat-age").textContent = `${Math.round(data.profile.account_age_days / 365)} years`;
+
+                // Repository Stats
+                document.getElementById("stat-stars").textContent = data.repositories.total_stars.toLocaleString();
+                document.getElementById("stat-forks").textContent = data.repositories.total_forks.toLocaleString();
+                document.getElementById("stat-avg-stars").textContent = data.repositories.avg_stars_per_repo;
+                document.getElementById("stat-doc-ratio").textContent = `${data.repositories.has_description_count} / ${data.repositories.total_repos}`;
+
+                // Activity Metrics
+                document.getElementById("stat-events").textContent = data.activity.total_events;
+                document.getElementById("stat-contributions").textContent = data.activity.contribution_events;
+                document.getElementById("stat-last-active").textContent = data.activity.days_since_last_activity !== null ? 
+                    `${data.activity.days_since_last_activity} days ago` : "No recent activity";
+                document.getElementById("stat-updated-30d").textContent = data.activity.recently_updated_repos;
+
+                // Render Languages bars
+                const langContainer = document.getElementById("languages-container");
+                langContainer.innerHTML = "";
+                const percentages = data.languages.language_percentages;
+                
+                if (Object.keys(percentages).length === 0) {
+                    langContainer.innerHTML = `<p class="subtle text-center">No language details found.</p>`;
+                } else {
+                    Object.entries(percentages).slice(0, 5).forEach(([lang, pct]) => {
+                        langContainer.innerHTML += `
+                            <div class="chart-row">
+                                <div class="chart-label"><span>${lang}</span><span>${pct}%</span></div>
+                                <div class="chart-bar-bg"><div class="chart-bar-fill" style="width: ${pct}%"></div></div>
+                            </div>`;
+                    });
+                }
+
+                // Render Top Repos Cards
+                const topReposList = document.getElementById("top-repos-list");
+                topReposList.innerHTML = "";
+                if (data.repositories.top_repos.length === 0) {
+                    topReposList.innerHTML = `<p class="subtle span-all text-center">No repositories available.</p>`;
+                } else {
+                    data.repositories.top_repos.forEach(repo => {
+                        topReposList.innerHTML += `
+                            <div class="repo-card">
+                                <h4><a href="${repo.url}" target="_blank">${repo.name}</a></h4>
+                                <div class="repo-badges">
+                                    <span class="repo-badge">⭐ ${repo.stars}</span>
+                                    <span class="repo-badge">🍴 ${repo.forks}</span>
+                                    ${repo.language ? `<span class="repo-badge lang">${repo.language}</span>` : ''}
+                                </div>
+                            </div>`;
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
