@@ -33,7 +33,7 @@ from fastapi.responses import JSONResponse
 from app.github_api import fetch_user_profile, fetch_user_repos, fetch_recent_events
 from app.analyzer import run_full_analysis
 
-# ── Logging ────────────────────────────────────────────────────────────────
+#  Logging 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
@@ -41,15 +41,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Path helpers ───────────────────────────────────────────────────────────
-# main.py lives at  github-portfolio-analyzer/app/main.py
-# ROOT is           github-portfolio-analyzer/
+#  Path helpers 
+
 ROOT = Path(__file__).resolve().parent.parent
 
 TEMPLATES_DIR = ROOT / "templates"
 STATIC_DIR    = ROOT / "static"
 
-# ── FastAPI app ────────────────────────────────────────────────────────────
+#  FastAPI app 
 app = FastAPI(
     title="GitHub Portfolio Analyzer",
     description="Analyze any public GitHub profile and generate a portfolio score.",
@@ -63,9 +62,9 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # Routes
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 @app.get("/")
 async def serve_frontend(request: Request):
@@ -102,7 +101,7 @@ async def analyze_user(username: str):
     429 – {"detail": "GitHub API rate limit exceeded. Add a GITHUB_TOKEN env var."}
     502 – {"detail": "GitHub API error: …"}
     """
-    # ── 1. Sanitise input ─────────────────────────────────────────────────
+    #  1. Sanitise input 
     username = username.strip()
     if not username:
         raise HTTPException(status_code=400, detail="Username must not be empty.")
@@ -112,7 +111,7 @@ async def analyze_user(username: str):
     if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,37}[a-zA-Z0-9])?$", username):
         raise HTTPException(status_code=400, detail=f"'{username}' is not a valid GitHub username.")
 
-    # ── 2. Fetch data from GitHub ─────────────────────────────────────────
+    #  2. Fetch data from GitHub 
     try:
         logger.info("Starting analysis for username='%s'", username)
 
@@ -159,7 +158,7 @@ async def analyze_user(username: str):
         logger.exception("Unexpected error analyzing '%s'", username)
         raise HTTPException(status_code=500, detail=f"Internal error: {exc}")
 
-    # ── 3. Run analysis ───────────────────────────────────────────────────
+    #  3. Run analysis 
     result = run_full_analysis(profile, repos, events)
 
     logger.info(
