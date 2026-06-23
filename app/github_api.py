@@ -28,10 +28,10 @@ from typing import Optional
 
 import requests
 
-# ── logging ────────────────────────────────────────────────────────────────
+#  logging 
 logger = logging.getLogger(__name__)
 
-# ── constants ──────────────────────────────────────────────────────────────
+#  constants 
 BASE_URL = "https://api.github.com"
 
 # Maximum repositories to retrieve (GitHub caps individual pages at 100).
@@ -63,7 +63,7 @@ def _build_headers() -> dict:
 _HEADERS = _build_headers()
 
 
-# ── helpers ────────────────────────────────────────────────────────────────
+#  helpers 
 
 def _get(url: str, params: Optional[dict] = None) -> Optional[dict | list]:
     """
@@ -109,7 +109,7 @@ def _get(url: str, params: Optional[dict] = None) -> Optional[dict | list]:
         raise
 
 
-# ── public API ─────────────────────────────────────────────────────────────
+#  public API 
 
 def fetch_user_profile(username: str) -> Optional[dict]:
     """
