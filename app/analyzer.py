@@ -26,9 +26,8 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # SECTION 1 – Profile Analysis
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def analyze_profile(profile: dict) -> dict:
     """
@@ -81,9 +80,8 @@ def analyze_profile(profile: dict) -> dict:
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # SECTION 2 – Repository Analysis
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def analyze_repositories(repos: list[dict]) -> dict:
     """
@@ -175,9 +173,9 @@ def _empty_repo_analysis() -> dict:
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # SECTION 3 – Language Analysis
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def analyze_languages(repos: list[dict]) -> dict:
     """
@@ -237,9 +235,9 @@ def analyze_languages(repos: list[dict]) -> dict:
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # SECTION 4 – Activity Analysis
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 # Event types that signal active, meaningful contribution.
 _CONTRIBUTION_EVENTS = {
@@ -348,9 +346,9 @@ def _empty_activity_analysis(repos: list[dict]) -> dict:
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # SECTION 5 – Portfolio Score (0–100)
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def compute_score(
     profile_data: dict,
@@ -382,7 +380,7 @@ def compute_score(
     strengths: list[str] = []
     weaknesses: list[str] = []
 
-    # ── 1. Followers & Reach (15 pts) ──────────────────────────────────
+    # 1. Followers & Reach (15 pts) 
     followers = profile_data.get("followers", 0)
     if followers >= 500:
         pts = 15
@@ -405,7 +403,7 @@ def compute_score(
     else:
         weaknesses.append("Low follower count – consider sharing your work publicly")
 
-    # ── 2. Repository Volume (10 pts) ───────────────────────────────────
+    # 2. Repository Volume (10 pts) 
     original_repos = repo_data.get("original_repo_count", 0)
     if original_repos >= 20:
         pts = 10
@@ -429,7 +427,7 @@ def compute_score(
     else:
         weaknesses.append(f"Only {original_repos} original repo(s) – create more to showcase skills")
 
-    # ── 3. Stars Earned (15 pts) ────────────────────────────────────────
+    #  3. Stars Earned (15 pts) 
     total_stars = repo_data.get("total_stars", 0)
     if total_stars >= 1000:
         pts = 15
@@ -452,7 +450,7 @@ def compute_score(
     else:
         weaknesses.append("Repositories have few stars – promote your work to gain visibility")
 
-    # ── 4. Documentation Quality (15 pts) ───────────────────────────────
+    #  4. Documentation Quality (15 pts)
     total_repos = repo_data.get("total_repos", 0)
     desc_count  = repo_data.get("has_description_count", 0)
     doc_ratio   = desc_count / total_repos if total_repos else 0
@@ -470,7 +468,7 @@ def compute_score(
             f"{missing} repo(s) lack a description – add READMEs and descriptions"
         )
 
-    # ── 5. Language Diversity (10 pts) ──────────────────────────────────
+    #  5. Language Diversity (10 pts) 
     unique_langs = lang_data.get("unique_languages", 0)
     if unique_langs >= 5:
         pts = 10
@@ -494,7 +492,7 @@ def compute_score(
             "Limited language diversity – explore new languages to broaden your profile"
         )
 
-    # ── 6. Recent Activity (20 pts) ─────────────────────────────────────
+    #  6. Recent Activity (20 pts) 
     contribution_events  = activity_data.get("contribution_events", 0)
     is_recently_active   = activity_data.get("is_recently_active", False)
     recently_updated_repos = activity_data.get("recently_updated_repos", 0)
@@ -541,7 +539,7 @@ def compute_score(
     else:
         weaknesses.append(f"Low recent activity (last event {days_since_last} days ago)")
 
-    # ── 7. Account Maturity (10 pts) ────────────────────────────────────
+    #  7. Account Maturity (10 pts) 
     age_days = profile_data.get("account_age_days", 0)
     age_years = age_days / 365
 
@@ -565,7 +563,7 @@ def compute_score(
     else:
         weaknesses.append("Account is relatively new – consistency over time will strengthen the score")
 
-    # ── 8. Community Engagement (5 pts) ─────────────────────────────────
+    #  8. Community Engagement (5 pts) 
     following = profile_data.get("following", 0)
     if following >= 5 and followers >= 1:
         pts = 5
@@ -578,7 +576,7 @@ def compute_score(
 
     score += pts
 
-    # ── Final ────────────────────────────────────────────────────────────
+    #  Final 
     score = max(0, min(100, score))   # clamp to [0, 100]
     grade = _score_to_grade(score)
 
@@ -600,9 +598,9 @@ def _score_to_grade(score: int) -> str:
     return "F"
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # SECTION 6 – Top-level Orchestrator
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def run_full_analysis(
     profile: dict,
@@ -615,13 +613,13 @@ def run_full_analysis(
     This is the only function main.py needs to call.
 
     Parameters
-    ----------
+   
     profile : Raw profile dict from github_api.fetch_user_profile()
     repos   : Raw repo list from github_api.fetch_user_repos()
     events  : Raw event list from github_api.fetch_recent_events()
 
     Returns
-    -------
+
     {
       "profile":    { … },
       "repositories": { … },
